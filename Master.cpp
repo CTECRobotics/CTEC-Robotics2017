@@ -9,8 +9,9 @@
 #include <opencv2/core/core.hpp>
 #include <CameraServer.h>
 #include <thread>
+#include <doubleSolenoid.h
 
-bool invertTest;
+
 bool isInverted;
 
 
@@ -24,6 +25,8 @@ public:
 	CANTalon *MotorR2;
 	CANTalon *MotorL1;
 	CANTalon *MotorL2;
+	
+	DoubleSolenoid *gearbox1;
 
 	Timer *AutoTimer;
 
@@ -34,7 +37,12 @@ public:
 	double throttle;
 	double steer;
 	int invert;
-
+	bool invertTest;
+	
+	bool soloTest;
+	double soloWait;
+	bool isHighGear;
+	
 	double StartTime;
 	static void VisionThread()
 	{
@@ -77,8 +85,12 @@ public:
 		this -> throttlePre = 0;
 		this -> steerPre = 0;
 		this -> invert = 1;
+		this -> invertTest = true;
+		
+		this -> soloTest = true;
+		this -> isHighGear=true;
+		this -> soloWait = .25;
 		this -> StartTime = 0;
-
 		invertTest = true;
 
 		leftJoyStick = new Joystick(0);
@@ -89,6 +101,8 @@ public:
 		MotorL1 = new CANTalon(3);
 		MotorL2 = new CANTalon(4);
 		AutoTimer = new Timer();
+		
+		gearbox1=new DoubleSolenoid(5,0,1);
 
 		MotorR1->SetControlMode(CANSpeedController::kFollower);
 		MotorR1->Set(1);
@@ -138,6 +152,34 @@ public:
 		if(rightJoyStick -> GetRawButton(2) == false){
 			invertTest = true;
 		}
+		
+		if(leftJoyStick -> GetRawButton(2)&soloTest) {
+				if(isHighGear)
+				{
+					
+					gearbox1->Set(DoubleSolenoid::Value::kForward);
+					Wait(waitvar);
+					gearbox1->Set(DoubleSolenoid::Value::kOff);
+					isHighGear=false;
+					
+				}
+				else if(!isHighGear)
+				{
+					
+					gearbox1->Set(DoubleSolenoid::Value::kReverse);
+					Wait(waitvar);
+					gearbox1->Set(DoubleSolenoid::Value::kOff);
+					isHighGear=true;
+					
+				}
+				soloTest=false;
+			}
+
+			if(!leftJoyStick -> GetRawButton(2)){
+				soloTest=true;
+			}
+		
+		
 		SmartDashboard::PutBoolean("invert",isInverted);
 
 		MotorR2->Set(throttlePre*invert + steerPre);
@@ -145,7 +187,7 @@ public:
 
 		frc::Wait(0.005);
 	}
-
+	
 	void TestPeriodic() {
 	}
 
