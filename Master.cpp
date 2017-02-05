@@ -12,7 +12,7 @@
 #include <doubleSolenoid.h
 
 
-bool isInverted;
+bool isInverted;	//True if robot drive is Inverted, false if not inverted
 
 
 class Robot: public frc::IterativeRobot {
@@ -23,27 +23,29 @@ public:
 
 	CANTalon *MotorR1;
 	CANTalon *MotorR2;
+	CANTalon *MotorR3;
 	CANTalon *MotorL1;
 	CANTalon *MotorL2;
+	CANTALON *MotorL3;
 	
 	DoubleSolenoid *gearbox1;
 
 	Timer *AutoTimer;
 
-	double thresh;
-	double throttlePre;
-	double steerPre;
+	double thresh;		// Threshold, if joystick value is below this number, the motors will be set to 0;
+	double throttlePre;	// Contains the raw value of the left joystick Y-axis
+	double steerPre;	// Contais the raw value of the right joystick X-axis
 
-	double throttle;
-	double steer;
-	int invert;
-	bool invertTest;
+	double throttle;	// Value used to set motors, derived from throttlePre
+	double steer;		// Value used to adjust motors in order to turn, derived from steerPre
+	int invert;		//value used to invert the motors by multiplying by throttle, (either 1 or -1)
+	bool invertTest;	// Used to make sure the invert If statement doesn't run multiple times with one press
 	
-	bool soloTest;
-	double soloWait;
-	bool isHighGear;
+	bool soloTest;		// Used to make sure the Solonoid If statement doesn't run multiple times with one press
+	double soloWait;	// Time it takes for the Solonoid to shift gears
+	bool isHighGear;	// States whether the robot is in high gear or low gear (true==high gear, false=low gear)
 	
-	double StartTime;
+	double StartTime;	//?????
 	static void VisionThread()
 	{
 		        cs::UsbCamera cameraF = CameraServer::GetInstance()->StartAutomaticCapture(0);
@@ -79,36 +81,41 @@ public:
         std::thread visionThread(VisionThread);
         visionThread.detach();
 
-		this -> thresh = .05;
-		this -> throttle = 0;
-		this -> steer = 0;
-		this -> throttlePre = 0;
-		this -> steerPre = 0;
-		this -> invert = 1;
-		this -> invertTest = true;
+		this -> thresh = .05;		// Threshold, if joystick value is below this number, the motors will be set to 0;
+		this -> throttle = 0;		// Value used to set motors, derived from throttlePre
+		this -> steer = 0;		// Value used to adjust motors in order to turn, derived from steerPre
+		this -> throttlePre = 0;	// Contains the raw value of the left joystick Y-axis
+		this -> steerPre = 0;		// Contais the raw value of the right joystick X-axis
+		this -> invert = 1;		//value used to invert the motors by multiplying by throttle, (either 1 or -1)
+		this -> invertTest = true;	// Used to make sure the invert If statement doesn't run multiple times with one press
 		
-		this -> soloTest = true;
-		this -> isHighGear=true;
-		this -> soloWait = .25;
-		this -> StartTime = 0;
-		invertTest = true;
+		this -> soloTest = true;	// Used to make sure the Solonoid If statement doesn't run multiple times with one press
+		this -> isHighGear=true;	// States whether the robot is in high gear or low gear (true==high gear, false=low gear)
+		this -> soloWait = .25;		// Time it takes for the Solonoid to shift gears
+		this -> StartTime = 0;		//??????
 
 		leftJoyStick = new Joystick(0);
 		rightJoyStick = new Joystick(1);
 
 		MotorR1 = new CANTalon(2);
 		MotorR2 = new CANTalon(1);
+		MotorR3 = new CANTalon(?);
 		MotorL1 = new CANTalon(3);
 		MotorL2 = new CANTalon(4);
+		MotorL3 = new CANTalon(?);
 		AutoTimer = new Timer();
 		
 		gearbox1=new DoubleSolenoid(5,0,1);
 
 		MotorR1->SetControlMode(CANSpeedController::kFollower);
 		MotorR1->Set(1);
+		MotorR3->SetControlMode(CANSpeedController::kFollower);
+		MotorR3->Set(1);
 
 		MotorL1->SetControlMode(CANSpeedController::kFollower);
 		MotorL1->Set(4);
+		MotorL3->SetControlMode(CANSpeedController::kFollower);
+		MotorL3->Set(4);
 
 		MotorR2->Set(0);
 		MotorL2->Set(0);
@@ -139,11 +146,13 @@ public:
 		throttlePre = leftJoyStick->GetY();
 		steerPre = rightJoyStick->GetX();
 
-		throttle = pow(2, throttlePre) - 1;
+		throttle = pow(2, throttlePre) - 1;	//Gets value for motors based on input from joystick ((2^ValueFromJoystick)-1)
 		steer = pow(2, steerPre) - 1;
 
-		SmartDashboard::PutNumber("throttle",throttlePre);
+		SmartDashboard::PutNumber("throttle",throttlePre);	// Displays the raw value fo the joystick on the Smart Dashboard
 
+		
+		//When button is pressed the motors are inverted via int invert and bool isInverted represents if the motors are inverted
 		if(rightJoyStick -> GetRawButton(2)&invertTest) {
 			invert *= -1;
 			invertTest = false;
@@ -153,6 +162,7 @@ public:
 			invertTest = true;
 		}
 		
+		//Shifts between low gear and high gear. bool isHighGear represents if it is in high gear (true) or low gear (False)
 		if(leftJoyStick -> GetRawButton(2)&soloTest) {
 				if(isHighGear)
 				{
@@ -180,7 +190,7 @@ public:
 			}
 		
 		
-		SmartDashboard::PutBoolean("invert",isInverted);
+		SmartDashboard::PutBoolean("invert",isInverted);		//Displays the bool isInverted on the SmartDashboard
 
 		MotorR2->Set(throttlePre*invert + steerPre);
 		MotorL2->Set(-throttlePre*invert + steerPre);
