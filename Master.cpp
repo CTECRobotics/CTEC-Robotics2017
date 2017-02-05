@@ -9,7 +9,7 @@
 #include <opencv2/core/core.hpp>
 #include <CameraServer.h>
 #include <thread>
-#include <doubleSolenoid.h
+#include <doubleSolenoid.h>
 
 
 bool isInverted;	//True if robot drive is Inverted, false if not inverted
@@ -26,7 +26,7 @@ public:
 	CANTalon *MotorR3;
 	CANTalon *MotorL1;
 	CANTalon *MotorL2;
-	CANTALON *MotorL3;
+	CANTalon *MotorL3;
 	
 	DoubleSolenoid *gearbox1;
 
