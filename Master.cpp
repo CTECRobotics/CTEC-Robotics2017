@@ -97,25 +97,25 @@ public:
 		leftJoyStick = new Joystick(0);
 		rightJoyStick = new Joystick(1);
 
-		MotorR1 = new CANTalon(2);
-		MotorR2 = new CANTalon(1);
-		MotorR3 = new CANTalon(?);
-		MotorL1 = new CANTalon(3);
-		MotorL2 = new CANTalon(4);
-		MotorL3 = new CANTalon(?);
+		MotorR1 = new CANTalon(1);
+		MotorR2 = new CANTalon(2);
+		MotorR3 = new CANTalon(3);
+		MotorL1 = new CANTalon(4);
+		MotorL2 = new CANTalon(5);
+		MotorL3 = new CANTalon(6);
 		AutoTimer = new Timer();
 		
 		gearbox1=new DoubleSolenoid(5,0,1);
 
 		MotorR1->SetControlMode(CANSpeedController::kFollower);
-		MotorR1->Set(1);
+		MotorR1->Set(2);
 		MotorR3->SetControlMode(CANSpeedController::kFollower);
-		MotorR3->Set(1);
+		MotorR3->Set(2);
 
 		MotorL1->SetControlMode(CANSpeedController::kFollower);
-		MotorL1->Set(4);
+		MotorL1->Set(5);
 		MotorL3->SetControlMode(CANSpeedController::kFollower);
-		MotorL3->Set(4);
+		MotorL3->Set(5);
 
 		MotorR2->Set(0);
 		MotorL2->Set(0);
