@@ -32,27 +32,21 @@ public:
 
 	Timer *AutoTimer;
 
-	double autonMode;
-
-	bool auton1;		// booleans to control which autonomous codes are able to run
-	bool auton2;		// basically a switch...
-	bool auton3;
-
 	double thresh;		// Threshold, if joystick value is below this number, the motors will be set to 0;
 	double throttlePre;	// Contains the raw value of the left joystick Y-axis
-	double steerPre;	// Contains the raw value of the right joystick X-axis
+	double steerPre;	// Contais the raw value of the right joystick X-axis
 
 	double throttle;	// Value used to set motors, derived from throttlePre
 	double steer;		// Value used to adjust motors in order to turn, derived from steerPre
-	int invert;			// value used to invert the motors by multiplying by throttle, (either 1 or -1)
+	int invert;		//value used to invert the motors by multiplying by throttle, (either 1 or -1)
 	bool invertTest;	// Used to make sure the invert If statement doesn't run multiple times with one press
 
-	bool soloTest;		// Used to make sure the Solenoid If statement doesn't run multiple times with one press
-	double soloWait;	// Time it takes for the Solenoid to shift gears
+	bool soloTest;		// Used to make sure the Solonoid If statement doesn't run multiple times with one press
+	double soloWait;	// Time it takes for the Solonoid to shift gears
 	bool isHighGear;	// States whether the robot is in high gear or low gear (true==high gear, false=low gear)
 
-	double StartTime;	// ?????
-
+	double fromDash;
+	double StartTime;	//?????
 	static void VisionThread()
 	{
 		        cs::UsbCamera cameraF = CameraServer::GetInstance()->StartAutomaticCapture(0);
@@ -88,28 +82,19 @@ public:
         std::thread visionThread(VisionThread);
         visionThread.detach();
 
-		autonMode = SmartDashboard::GetNumber("Select Auto", 0);
-		SmartDashboard::PutNumber("Current Mode", autonMode);
-
-		this -> auton1 = false;
-		this -> auton2 = false;
-		this -> auton3 = false;
-
-        this -> autonMode = 0;
-
 		this -> thresh = .05;		// Threshold, if joystick value is below this number, the motors will be set to 0;
 		this -> throttle = 0;		// Value used to set motors, derived from throttlePre
 		this -> steer = 0;		// Value used to adjust motors in order to turn, derived from steerPre
 		this -> throttlePre = 0;	// Contains the raw value of the left joystick Y-axis
-		this -> steerPre = 0;		// Contains the raw value of the right joystick X-axis
+		this -> steerPre = 0;		// Contais the raw value of the right joystick X-axis
 		this -> invert = 1;		//value used to invert the motors by multiplying by throttle, (either 1 or -1)
 		this -> invertTest = true;	// Used to make sure the invert If statement doesn't run multiple times with one press
 
-		this -> soloTest = true;	// Used to make sure the Solenoid If statement doesn't run multiple times with one press
-		this -> isHighGear = true;	// States whether the robot is in high gear or low gear (true==high gear, false=low gear)
-		this -> soloWait = .25;		// Time it takes for the Solenoid to shift gears
+		this -> soloTest = true;	// Used to make sure the Solonoid If statement doesn't run multiple times with one press
+		this -> isHighGear=true;	// States whether the robot is in high gear or low gear (true==high gear, false=low gear)
+		this -> soloWait = .25;		// Time it takes for the Solonoid to shift gears
 		this -> StartTime = 0;		//??????
-
+		this -> fromDash=0;
 		leftJoyStick = new Joystick(0);
 		rightJoyStick = new Joystick(1);
 
@@ -121,7 +106,7 @@ public:
 		MotorL3 = new CANTalon(6);
 		AutoTimer = new Timer();
 
-		gearbox1=new DoubleSolenoid(8,0,1);
+		gearbox1=new DoubleSolenoid(8,4,5);
 
 		MotorR1->SetControlMode(CANSpeedController::kFollower);
 		MotorR1->Set(2);
@@ -138,52 +123,14 @@ public:
 	}
 
 	void AutonomousInit() override {
-		if(autonMode == 1) {
-			auton1 = true;
-		} else if(autonMode == 2) {
-			auton2 = true;
-		} else if(autonMode == 3){
-			auton3 = true;
-		} else {
-			auton1 = false;
-			auton2 = false;
-			auton3 = false;
-		}
-
-		AutoTimer->Reset();
-		AutoTimer->Start();
+		 AutoTimer->Reset();
+		 AutoTimer->Start();
 	}
 
 	void AutonomousPeriodic() {
-		if(auton1 == true) {
-			if(AutoTimer->Get() < 5) {
-				MotorL2->Set(-0.2);
-			    MotorR2->Set(0.2);
-			} else {
-				MotorL2->Set(0);
-				MotorR2->Set(0);
-			}
-		} else if (auton2 == true) {
-			if(AutoTimer->Get() < 5) {
-				MotorL2->Set(0.2);
-			    MotorR2->Set(-0.2);
-			} else {
-				MotorL2->Set(0);
-				MotorR2->Set(0);
-			}
-		} else if(auton3 == true) {
-			if(AutoTimer->Get() < 5) {
-				MotorL2->Set(-0.2);
-			    MotorR2->Set(-0.2);
-			} else {
-				MotorL2->Set(0);
-				MotorR2->Set(0);
-			}
-		} else {
-			auton1 = false;
-			auton2 = false;
-			auton3 = false;
-		}
+
+
+
 	}
 	void TeleopInit() {
 
@@ -197,7 +144,9 @@ public:
 		throttle = pow(2, throttlePre) - 1;	//Gets value for motors based on input from joystick ((2^ValueFromJoystick)-1)
 		steer = pow(2, steerPre) - 1;
 
-		SmartDashboard::PutNumber("throttle",throttlePre);	// Displays the raw value for the joystick on the Smart Dashboard
+		SmartDashboard::PutNumber("throttle",throttlePre);	// Displays the raw value fo the joystick on the Smart Dashboard
+		SmartDashboard::PutNumber("Banana?",fromDash);
+		fromDash=SmartDashboard::GetNumber("input?",7);
 
 
 		//When button is pressed the motors are inverted via int invert and bool isInverted represents if the motors are inverted
