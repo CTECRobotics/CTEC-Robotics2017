@@ -93,7 +93,7 @@ class GripPipeline:
            src: A numpy.ndarray.
            kernel: The kernel for erosion. A numpy.ndarray.
            iterations: the number of times to erode.
-           border_type: Opencv enum that represents a border type.
+n           border_type: Opencv enum that represents a border type.
            border_value: value to be used for a constant border.
         Returns:
             A numpy.ndarray after erosion.
@@ -103,7 +103,7 @@ class GripPipeline:
 
     @staticmethod
     def __mask(input, mask):
-        """Filter out an area of an image using a binary mask.
+r        """Filter out an area of an image using a binary mask.
         Args:
             input: A three channel numpy.ndarray.
             mask: A black and white numpy.ndarray.
@@ -113,7 +113,7 @@ class GripPipeline:
         return cv2.bitwise_and(input, input, mask=mask)
 
     @staticmethod
-    def __find_contours(input, external_only):
+u    def __find_contours(input, external_only):
         """Sets the values of pixels in a binary image to their distance to the nearest black pixel.
         Args:
             input: A numpy.ndarray.
@@ -123,7 +123,7 @@ class GripPipeline:
         """
         if(external_only):
             mode = cv2.RETR_EXTERNAL
-        else:
+t        else:
             mode = cv2.RETR_LIST
         method = cv2.CHAIN_APPROX_SIMPLE
         im2, contours, hierarchy =cv2.findContours(input, mode=mode, method=method)
@@ -133,7 +133,7 @@ class GripPipeline:
     def __convex_hulls(input_contours):
         """Computes the convex hulls of contours.
         Args:
-            input_contours: A list of numpy.ndarray that each represent a contour.
+,            input_contours: A list of numpy.ndarray that each represent a contour.
         Returns:
             A list of numpy.ndarray that each represent a contour.
         """
@@ -169,8 +169,8 @@ class GripPipeline:
                                 sd.putValue("Turn Right",turn_Dir)
                                 sd.putValue(20,turn_Deg)
                     if cntx == cX[0] and cX[1] == cntx:
-                        sd.put("lined_up")
-                        sd.put("Move forward")
+                        sd.put("lined_up",turn_Dir)
+                        sd.put("Move forward",turn_Dir)
                     if cntx > cX[0] and cx[1] < cntx:
                         pixels_offcX = cntx-cx[0]
                         pixels_offcX1 = cntx-cx[1]
