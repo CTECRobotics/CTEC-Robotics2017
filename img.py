@@ -69,7 +69,7 @@ class GripPipeline:
         # Step Convex_Hulls0:
         self.__convex_hulls_contours = self.find_contours_output
         (self.convex_hulls_output) = self.__convex_hulls(self.__convex_hulls_contours)
-        #run Calc-0ffset:
+        # run Calc-0ffset:
         __calc_offset(self.covex_hulls_output)
 
     @staticmethod
