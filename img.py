@@ -147,7 +147,7 @@ class GripPipeline:
 	cntx = 540
 	cnty = 360
 	auto_value = sd.getAutoUpdateValue('robotTime', 0)
-        while(True)
+        while(True):
             try:
                 input = input[0] if imutils.is_cv2() else input[1]
                 for i in input:
@@ -156,19 +156,19 @@ class GripPipeline:
                     cY[i] = int(M["m01"] / M["m00"])
                     if cntx > cX[0] and cX[1] > cntx:
                         pixels_off = cntx-cX[0]
-                            if pixels_off <10:
+                        if pixels_off <10:
                                 sd.putValue("Turn Right",turn_Dir)
                                 sd.putValue(2,turn_Deg)
-                            if pixels_off >10 and pixels_off <31:
+                        if pixels_off >10 and pixels_off <31:
                                 sd.putValue("Turn Right",turn_Dir)
                                 sd.putValue(4,turn_Deg)
-                            if pixels_off >31 and pixels_off < 100:
+                        if pixels_off >31 and pixels_off < 100:
                                 sd.putValue("Turn Right",turn_Dir)
                                 sd.putValue(12,turn_Deg)
-                            if pixels_off > 100:
+                        if pixels_off > 100:
                                 sd.putValue("Turn Right",turn_Dir)
                                 sd.putValue(20,turn_Deg)
-                    if cntx == cX[0] and cX[1] == cntx:
+		            if cntx == cX[0] and cX[1] == cntx:
                         sd.put("lined_up",turn_Dir)
                         sd.put("Move forward",turn_Dir)
                     if cntx > cX[0] and cx[1] < cntx:
