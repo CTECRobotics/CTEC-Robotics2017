@@ -93,7 +93,7 @@ class GripPipeline:
            src: A numpy.ndarray.
            kernel: The kernel for erosion. A numpy.ndarray.
            iterations: the number of times to erode.
-n           border_type: Opencv enum that represents a border type.
+           border_type: Opencv enum that represents a border type.
            border_value: value to be used for a constant border.
         Returns:
             A numpy.ndarray after erosion.
@@ -103,7 +103,7 @@ n           border_type: Opencv enum that represents a border type.
 
     @staticmethod
     def __mask(input, mask):
-r        """Filter out an area of an image using a binary mask.
+        """Filter out an area of an image using a binary mask.
         Args:
             input: A three channel numpy.ndarray.
             mask: A black and white numpy.ndarray.
@@ -113,7 +113,7 @@ r        """Filter out an area of an image using a binary mask.
         return cv2.bitwise_and(input, input, mask=mask)
 
     @staticmethod
-u    def __find_contours(input, external_only):
+    def __find_contours(input, external_only):
         """Sets the values of pixels in a binary image to their distance to the nearest black pixel.
         Args:
             input: A numpy.ndarray.
@@ -123,7 +123,7 @@ u    def __find_contours(input, external_only):
         """
         if(external_only):
             mode = cv2.RETR_EXTERNAL
-t        else:
+        else:
             mode = cv2.RETR_LIST
         method = cv2.CHAIN_APPROX_SIMPLE
         im2, contours, hierarchy =cv2.findContours(input, mode=mode, method=method)
@@ -133,7 +133,7 @@ t        else:
     def __convex_hulls(input_contours):
         """Computes the convex hulls of contours.
         Args:
-,            input_contours: A list of numpy.ndarray that each represent a contour.
+           input_contours: A list of numpy.ndarray that each represent a contour.
         Returns:
             A list of numpy.ndarray that each represent a contour.
         """
