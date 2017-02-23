@@ -14,9 +14,32 @@
 #include <functional>
 #include <AnalogInput.h>
 #include <PIDSource.h>
+#include <Timer.h>
+#include <ctime>
+
+
+#define X 0
+#define Y 1
+#define Z 2
 
 class Robot: public frc::IterativeRobot {
 private:
+
+	// BEGIN Accelerometer
+	Accelerometer *accel;
+
+	double deltaTime = 0.0;
+	int FPS = 0;
+	int seconds = 0;
+	double mg[3] = {0.0, 0.f, 0.0};         // Using --std=c++11
+	double &forward = mg[Z];  // Assuming the Z axis is forward relative to the roborio
+	double &up = mg[Y];       // Assuming the Y axis is up relative to the roborio
+	double theta = 0.0f;
+	                        // X     Y     Z
+	double velocity[3] = {0.0, 0.0, 0.0};   // Using --std=c++11
+	double position[3] = {0.0, 0.0, 0.0};   // Using --std=c++11
+
+	// END Accelerometer
 
 	const double EPSILON = 1E-1;
 	double soloWait;	// Time it takes for the Solenoid to shift gears
@@ -24,9 +47,7 @@ private:
 
 	std::function<void()> autonomousProgram;
 
-	AnalogInput *potPort;
-	PIDController *gearController;
-	PIDOutput *gearMotor;
+
 
 	Joystick *leftJoyStick;
 	Joystick *rightJoyStick;
@@ -43,14 +64,16 @@ private:
 
 	Timer *AutoTimer;
 
-	//double gearMechOffset = 2930.0;	//
-	double positionUp = 3.44;		// Highest position
-	double positionLoad = 3.48;		// Load position
-	double positionDown = 3.56;		// Lowest position
+	// BEGIN Potentiometer and Gear Motor
+	AnalogInput *potPort;
+	PIDController *gearController;
+	PIDOutput *gearMotor;
+	double positionUp = 0.0;		//  0.12 difference from down  3.44;		// Highest position
+	double positionLoad = 0.0;		// 0.0225 diff from up 3.4625;			// Load position
+	double positionDown = 0.0;	//3.56;						// Lowest position
+	// END Potentiometer and Gear Motor
 
 	double autonMode;
-
-	bool shouldStopGear = true;
 
 	double thresh;		// Threshold, if joystick value is below this number, the motors will be set to 0;
 	double throttlePre;	// Contains the raw value of the left joystick Y-axis
@@ -80,8 +103,6 @@ private:
 
 	double roboRioAngle = 0.0;
 
-	Accelerometer *accel;
-	double lastTime = 0.0;
 public:
 	void RobotInit();
 	void shiftHigh();
@@ -110,6 +131,7 @@ public:
 	void auton1();
 	void auton2();
 	void auton3();
+	void Autonomous();
 	void AutonomousPeriodic();
 	void TeleopInit();
 	void TeleopPeriodic();
@@ -118,7 +140,6 @@ public:
 void Robot::RobotInit() {
     //std::thread visionThread(VisionThread);
     //visionThread.detach();
-
 	potPort = new AnalogInput(0);
 	gearMotor = new CANTalon(7);
 	gearController = new PIDController(15.0, 0.7, 8.5, potPort, gearMotor);
@@ -127,13 +148,28 @@ void Robot::RobotInit() {
 	SmartDashboard::PutNumber("I", gearController->GetI());
 	SmartDashboard::PutNumber("D", gearController->GetD());
 
+	positionDown = potPort->PIDGet();
+	positionUp = positionDown - 0.12;
+	positionLoad = positionUp + 0.0225;
+	gearSetPoint = positionDown;
+	gearController->SetSetpoint(positionDown);
 	SmartDashboard::PutNumber("Current Mode", autonMode);
 
+	// BEGIN Accelerometer initialization
 	accel = new BuiltInAccelerometer(Accelerometer::kRange_4G);
 
-	double accelY = accel->GetY();
-	double accelZ = accel->GetZ();
-	roboRioAngle = atan(accelY/accelZ);
+	mg[X] = accel->GetX();
+	mg[Y] = accel->GetY();
+	mg[Z] = accel->GetZ();
+	/*
+	 * forward is a refrence to which ever axis points forward relative to the roborio
+	 * up is a refrence to which ever axis points up relative to the roborio
+	 */
+	theta = atan(forward/up);
+	SmartDashboard::PutNumber("Theta", theta);
+	SmartDashboard::PutNumber("Cos(Theta)", cos(theta));
+	SmartDashboard::PutNumber("Sin(Theta)", sin(theta));
+	// END Acccelerometer Initialization
 
     this -> autonMode = 0;
 
@@ -189,6 +225,8 @@ void Robot::RobotInit() {
 
 	MotorR2->Set(0);
 	MotorL2->Set(0);
+	AutoTimer->Reset();
+	AutoTimer->Start();
 }
 
 void Robot::shiftHigh(){//Puts the robot into High-Gear
@@ -206,10 +244,13 @@ void Robot::shiftLow(){ //Puts the robot into Low-Gear
 
 void Robot::auton0(){ // Default Autonomous mode does nothing
 	this->MotorR2->Set(0.0);
+	this->MotorL2->Set(0.0);
 }
 
 void Robot::auton1(){
 	// do stuff
+	MotorR2->Set(0.1);
+	MotorL2->Set(-0.1);
 }
 
 void Robot::auton2(){
@@ -221,9 +262,6 @@ void Robot::auton3(){
 }
 
 void Robot::AutonomousPeriodic() {
-	SmartDashboard::PutNumber("Accel X", accel->GetX());
-	SmartDashboard::PutNumber("Accel Y", accel->GetY());
-	SmartDashboard::PutNumber("Accel Z", accel->GetZ());
 	this -> autonomousProgram();
 }
 
@@ -231,7 +269,52 @@ void Robot::TeleopInit() {
 
 }
 
+
+
+void Robot::Autonomous(){
+	if (AutoTimer->Get() - seconds >= 1){
+		seconds = AutoTimer->Get();
+		deltaTime = static_cast<double>(1.0)/FPS;
+		FPS = 0;
+	}
+	SmartDashboard::PutNumber("AutoTimer", AutoTimer->Get());
+	SmartDashboard::PutNumber("deltaTime", deltaTime);
+
+	FPS++;
+	double acceleration[3] = {accel->GetX(),
+                                    accel->GetY(),
+                                    accel->GetZ()};   // using --std=c++11
+    // Raw acceleration
+    SmartDashboard::PutNumber("Acceleration (Raw) {X}", acceleration[0]);
+    SmartDashboard::PutNumber("Acceleration (Raw) {Y}", acceleration[1]);
+    SmartDashboard::PutNumber("Acceleration (Raw) {Z}", acceleration[2]);
+    acceleration[Z] = cos(theta) * (acceleration[Z] - mg[Z])
+                    + sin(theta) * (acceleration[Y] - mg[Y]);
+    acceleration[Y] = sin(theta) * (acceleration[Z] - mg[Z])
+                    + cos(theta) * (acceleration[Y] - mg[Y]);
+    // Calculate velocity and position of robot based on acceleration
+    for(int i = 0; i < 3; i++){
+        velocity[i] += acceleration[i] * deltaTime;
+        position[i] += (velocity[i] * deltaTime)/2;
+    }
+    // Calculated Acceleration
+    SmartDashboard::PutNumber("Acceleration {X}", acceleration[0]);
+    SmartDashboard::PutNumber("Acceleration {Y}", acceleration[1]);
+    SmartDashboard::PutNumber("Acceleration {Z}", acceleration[2]);
+
+    // Calculated velocity
+    SmartDashboard::PutNumber("Velocity {X}", velocity[0]);
+    SmartDashboard::PutNumber("Velocity {Y}", velocity[1]);
+    SmartDashboard::PutNumber("Velocity {Z}", velocity[2]);
+    // Calculated Position
+    SmartDashboard::PutNumber("Position {X}", position[0]);
+    SmartDashboard::PutNumber("Position {Y}", position[1]);
+    SmartDashboard::PutNumber("Position {Z}", position[2]);
+}
+
+
 void Robot::TeleopPeriodic() {
+	//this->Autonomous();
 	SmartDashboard::PutBoolean("invert",isInverted);		//Displays the bool isInverted on the SmartDashboard
 	SmartDashboard::PutNumber("throttle",throttlePre);	// Displays the raw value for the joystick on the Smart Dashboard
 	SmartDashboard::PutNumber("gearSetPoint",gearSetPoint);
@@ -312,6 +395,5 @@ void Robot::TeleopPeriodic() {
 
 	frc::Wait(0.005);
 }
-
 
 START_ROBOT_CLASS(Robot)
