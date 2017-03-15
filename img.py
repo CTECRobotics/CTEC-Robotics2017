@@ -48,6 +48,7 @@ class GripPipeline:
         self.convex_hulls_output = None
 
     def process(self, source0):
+        #does this run as a loop or thread?
         """
         Runs the pipeline and sets all outputs to new values.
         """
