@@ -146,14 +146,15 @@ class GripPipeline:
         for contour in input_contours:
             output.append(cv2.convexHull(contour))
         return output
-
+    @staticmethod
     @staticmethod
     def __calc_offset(input):
+        distance = #
         cntx = 540
         cnty = 360
-        auto_valuen = sd.getAutoUpdateValue('robotTime', 0)
-        while (True):
-            try:
+        
+        auto_value = sd.getAutoUpdateValue('robotTime', 0)
+        while auton_value < 16:
                 input = input[0] if imutils.is_cv2() else input[1]
                 for i in input:
                     M = cv2.moments(i)
@@ -199,9 +200,5 @@ class GripPipeline:
                             sd.putValue(-4, turn_Deg)
                         if pixels_offcX1 > 100:
                             #sd.putValue("Turn Left", turn_Dir)
-                            sd.putValue(-20, turn_Deg)
-                    if auton_value > 15:
-                        break
-                        # More statements?
-            finally:
-                print("times up")
+                            sd.putValue(-20, turn_Deg)    
+                       # More statements?
