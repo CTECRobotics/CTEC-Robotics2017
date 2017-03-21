@@ -104,7 +104,7 @@ private:
 	bool testButton5;
 	double gearSetPoint;
 	double gearPosition;
-	double StartTime;	// ?????
+	double StartTime;	// 
 	const double GEAR_UP_VELOCITY = -0.28;
 	const double GEAR_DOWN_VELOCITY = 0.1;
 	const double GEAR_HOLD = -0.15;
@@ -199,7 +199,7 @@ void Robot::RobotInit() {
 	this -> soloTest = true;	// Used to make sure the Solenoid If statement doesn't run multiple times with one press
 	this -> isHighGear = true;	// States whether the robot is in high gear or low gear (true==high gear, false=low gear)
 	soloWait = .25;				// Time it takes for the Solenoid to shift gears
-	this -> StartTime = 0;		//??????
+	this -> StartTime = 0;		//unused variable
 
 	this -> gearSetPoint = positionUp;
 
