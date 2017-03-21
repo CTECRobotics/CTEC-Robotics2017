@@ -17,6 +17,7 @@ class GripPipeline:
         """initializes all values to presets or None if need to be set
         """
         self.source0 = cv2.VideoCapture(0)
+        self.frame = self.source0.read()
         self.__hsv_threshold_hue = [38.09089118939224, 86.13255726266553]
         self.__hsv_threshold_saturation = [82.55395683453237, 255.0]
         self.__hsv_threshold_value = [197.21223021582733, 255.0]
@@ -45,13 +46,13 @@ class GripPipeline:
 
         self.convex_hulls_output = None
 
-    def process(self, source0):
+    def process(self):
         # does this run as a loop or thread?
         """
         Runs the pipeline and sets all outputs to new values.
         """
         # Step HSV_Threshold0:
-        self.__hsv_threshold_input = source0
+        self.__hsv_threshold_input = self.source0
         (self.hsv_threshold_output) = self.__hsv_threshold(self.__hsv_threshold_input, self.__hsv_threshold_hue,
                                                            self.__hsv_threshold_saturation, self.__hsv_threshold_value)
 
@@ -62,7 +63,7 @@ class GripPipeline:
                                                  self.__cv_erode_bordervalue)
 
         # Step Mask0:
-        self.__mask_input = source0
+        self.__mask_input = self.source0
         self.__mask_mask = self.cv_erode_output
         (self.mask_output) = self.__mask(self.__mask_input, self.__mask_mask)
 
@@ -75,7 +76,7 @@ class GripPipeline:
         self.__convex_hulls_contours = self.find_contours_output
         (self.convex_hulls_output) = self.__convex_hulls(self.__convex_hulls_contours)
         # run Calc-0ffset:
-        __calc_offset(self.covex_hulls_output)
+        calc_offset(self.covex_hulls_output)
 
     @staticmethod
     def __hsv_threshold(input, hue, sat, val):
@@ -148,13 +149,13 @@ class GripPipeline:
         return output
     @staticmethod
     @staticmethod
-    def __calc_offset(input):
-        distance = #
+    def calc_offset(input):
+        distance = 0
         cntx = 540
         cnty = 360
         
         auto_value = sd.getAutoUpdateValue('robotTime', 0)
-        while auton_value < 16:
+        while auto_value < 16:
                 input = input[0] if imutils.is_cv2() else input[1]
                 for i in input:
                     M = cv2.moments(i)
