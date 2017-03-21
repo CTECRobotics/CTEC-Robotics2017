@@ -104,7 +104,7 @@ private:
 	bool testButton5;
 	double gearSetPoint;
 	double gearPosition;
-	double StartTime;	// 
+	double StartTime;	// Unused variable
 	const double GEAR_UP_VELOCITY = -0.28;
 	const double GEAR_DOWN_VELOCITY = 0.1;
 	const double GEAR_HOLD = -0.15;
