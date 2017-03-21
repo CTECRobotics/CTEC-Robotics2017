@@ -12,6 +12,6 @@ if __name__ = '__main__':
     strip = Adafruit_NeoPixel(led_count, led_pin, led_freq_Hz, led_dma, led_invert, led_brightness)
     strip.begin()
         for i in strip.numPixels:
-            strip.setPixelColor(i, 0, 0, 255))
+            strip.setPixelColor(i, 0, 0, 255) # sets each led to green 
             if i == strip.numPixels:
                 strip.show()
