@@ -52,7 +52,7 @@ class GripPipeline:
         Runs the pipeline and sets all outputs to new values.
         """
         # Step HSV_Threshold0:
-        self.__hsv_threshold_input = self.source0
+        self.__hsv_threshold_input = self.frame
         (self.hsv_threshold_output) = self.__hsv_threshold(self.__hsv_threshold_input, self.__hsv_threshold_hue,
                                                            self.__hsv_threshold_saturation, self.__hsv_threshold_value)
 
@@ -63,7 +63,7 @@ class GripPipeline:
                                                  self.__cv_erode_bordervalue)
 
         # Step Mask0:
-        self.__mask_input = self.source0
+        self.__mask_input = self.frame
         self.__mask_mask = self.cv_erode_output
         (self.mask_output) = self.__mask(self.__mask_input, self.__mask_mask)
 
