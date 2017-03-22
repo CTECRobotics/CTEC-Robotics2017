@@ -94,26 +94,22 @@ class Vision:
 
     @staticmethod
     def line_up(contour):
+        distance = 0
         try:
             cnt_0 = contour[0]
             cnt_1 = contour[1]
-
             M = cv2.moments(cnt_0)
             cx = int(M['m10']/M['m00'])
-            area_0 = cv2.contourArea(cnt_0)
-            area_1 = cv2.contourArea(cnt_1)
-            width_0 = area_0
-            width_1 = area_1
+            x,y,w,h = cv2.boundingRect(cnt_0)
+            x_1,y_1,w_1,h_1 = cv2.boundingRect(cnt_1)
             angle_const = 68.5/2
-            k_0 = math.tan(angle_const) / width_0
-            k_1 = math.tan(angle_const) / width_1
-            b_0 = math.atan(width_1 * k_0)
-            b_1 = math.atan(width_0 * k_1)
-            if b_0 == b_1:
-                sd.putValue(true, lined_up)
+            angle_0 = math.degrees(math.atan(w/distance))
+            angle_1 = math.degrees(math.atan(w_1/distance))
+            if math.floor(angle_0) == math.floor(angle_1):
+                sd.putValue('lined_up',true)
             else:
-                sd.putValue(false, lined_up)
-                sd.putValue(b_0, angle_1)
-                sd.putValue(b_1, angle_2)
+                sd.putValue('lined_up',false)
+                sd.putValue('angle_1',angle_0)
+                sd.putValue('angle_2',angle_1)
         except IndexError as e:
             sd.putValue("IndexError", IndexError)
