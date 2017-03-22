@@ -167,7 +167,6 @@ class GripPipeline:
             M = cv2.moments(c)
             cX = iny(M["m10"]/ M["m00"])
             cY = int(M["m01"]/ M["m00"])
-            print(c)
 
 if __name__ == "__main__":
        ip = GripPipeline()
