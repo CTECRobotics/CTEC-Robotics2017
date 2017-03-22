@@ -104,12 +104,15 @@ class Vision:
             angle_const = 68.5/2
             angle_0 = math.degrees(math.atan(w/distance))
             angle_1 = math.degrees(math.atan(w_1/distance))
-            if math.floor(angle_0) == math.floor(angle_1):
-                sd.putValue('lined_up',true)
+            if math.floor(angle_0) > 68.5 or math.floor(angle_1) > 68.5:
+                sd.putValue('WAT', "Some how got a larger angle than the cameras POV")
             else:
-                sd.putValue('lined_up',false)
-                sd.putValue('angle_1',angle_0)
-                sd.putValue('angle_2',angle_1)
+                if math.floor(angle_0) == math.floor(angle_1):
+                    sd.putValue('lined_up',true)
+                else:
+                    sd.putValue('lined_up',false)
+                    sd.putValue('angle_1',angle_0)
+                    sd.putValue('angle_2',angle_1)
         except IndexError as e:
             sd.putValue("IndexError", IndexError)
             
