@@ -99,7 +99,6 @@ class Vision:
             cnt_0 = contour[0]
             cnt_1 = contour[1]
             M = cv2.moments(cnt_0)
-            cx = int(M['m10']/M['m00'])
             x,y,w,h = cv2.boundingRect(cnt_0)
             x_1,y_1,w_1,h_1 = cv2.boundingRect(cnt_1)
             angle_const = 68.5/2
