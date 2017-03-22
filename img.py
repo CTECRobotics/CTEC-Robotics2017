@@ -5,6 +5,7 @@ from enum import Enum
 import argparse
 import imutils
 from networktables import NetworkTables
+import time
 
 NetworkTables.initialize(server='roborio-6445-frc.local')
 sd = NetworkTables.getTable('SmartDashboard')
@@ -16,8 +17,9 @@ class GripPipeline:
     def __init__(self):
         """initializes all values to presets or None if need to be set
         """
-        self.source0 = cv2.VideoCapture(0)
-        self.frame = self.source0.read()
+        self.vid = None
+        self.frame = None
+        self.ret = None
         self.__hsv_threshold_hue = [38.09089118939224, 86.13255726266553]
         self.__hsv_threshold_saturation = [82.55395683453237, 255.0]
         self.__hsv_threshold_value = [197.21223021582733, 255.0]
@@ -43,7 +45,7 @@ class GripPipeline:
         self.find_contours_output = None
 
         self.__convex_hulls_contours = self.find_contours_output
-
+        self.w = 0
         self.convex_hulls_output = None
 
     def process(self):
@@ -51,32 +53,40 @@ class GripPipeline:
         """
         Runs the pipeline and sets all outputs to new values.
         """
-        # Step HSV_Threshold0:
-        self.__hsv_threshold_input = self.frame
-        (self.hsv_threshold_output) = self.__hsv_threshold(self.__hsv_threshold_input, self.__hsv_threshold_hue,
-                                                           self.__hsv_threshold_saturation, self.__hsv_threshold_value)
+        while True:
+            self.vid = None
+            self.vid = cv2.VideoCapture(0)
+            self.ret = None
+            self.frame = None
+            self.ret , self.frame = self.vid.read()
+            print(type(self.frame))
+            self.w +=1
+            print(self.w)
+            # Step HSV_Threshold0:
+            self.__hsv_threshold_input = self.frame
+            (self.hsv_threshold_output) = self.__hsv_threshold(self.__hsv_threshold_input, self.__hsv_threshold_hue,
+                                                               self.__hsv_threshold_saturation, self.__hsv_threshold_value)
 
-        # Step CV_erode0:
-        self.__cv_erode_src = self.hsv_threshold_output
-        (self.cv_erode_output) = self.__cv_erode(self.__cv_erode_src, self.__cv_erode_kernel, self.__cv_erode_anchor,
-                                                 self.__cv_erode_iterations, self.__cv_erode_bordertype,
-                                                 self.__cv_erode_bordervalue)
+            # Step CV_erode0:
+            self.__cv_erode_src = self.hsv_threshold_output
+            (self.cv_erode_output) = self.__cv_erode(self.__cv_erode_src, self.__cv_erode_kernel, self.__cv_erode_anchor,
+                                                     self.__cv_erode_iterations, self.__cv_erode_bordertype,
+                                                     self.__cv_erode_bordervalue)
 
-        # Step Mask0:
-        self.__mask_input = self.frame
-        self.__mask_mask = self.cv_erode_output
-        (self.mask_output) = self.__mask(self.__mask_input, self.__mask_mask)
+            # Step Mask0:
+            self.__mask_input = self.frame
+            self.__mask_mask = self.cv_erode_output
+            (self.mask_output) = self.__mask(self.__mask_input, self.__mask_mask)
 
-        # Step Find_Contours0:
-        self.__find_contours_input = self.hsv_threshold_output
-        (self.find_contours_output) = self.__find_contours(self.__find_contours_input,
-                                                           self.__find_contours_external_only)
-
-        # Step Convex_Hulls0:
-        self.__convex_hulls_contours = self.find_contours_output
-        (self.convex_hulls_output) = self.__convex_hulls(self.__convex_hulls_contours)
-        # run Calc-0ffset:
-        calc_offset(self.covex_hulls_output)
+            # Step Find_Contours0:
+            self.__find_contours_input = self.hsv_threshold_output
+            (self.find_contours_output) = self.__find_contours(self.__find_contours_input,
+                                                               self.__find_contours_external_only)
+            # Step Convex_Hulls0:
+            self.__convex_hulls_contours = self.find_contours_output
+            (self.convex_hulls_output) = self.__convex_hulls(self.__convex_hulls_contours)
+            # run Calc-0ffset:
+            self.__calc_offset(self.convex_hulls_output) 
 
     @staticmethod
     def __hsv_threshold(input, hue, sat, val):
@@ -148,58 +158,17 @@ class GripPipeline:
             output.append(cv2.convexHull(contour))
         return output
     @staticmethod
-    @staticmethod
-    def calc_offset(input):
+    def __calc_offset(input):
         distance = 0
         cntx = 540
         cnty = 360
-        
         auto_value = sd.getAutoUpdateValue('robotTime', 0)
-        while auto_value < 16:
-                input = input[0] if imutils.is_cv2() else input[1]
-                for i in input:
-                    M = cv2.moments(i)
-                    cX[i] = int(M["m10"] / M["m00"])
-                    cY[i] = int(M["m01"] / M["m00"])
-                    if cntx > cX[0] and cX[1] > cntx:
-                        pixels_off = cntx - cX[0]
-                        if pixels_off < 10:
-                            # sd.putValue("Turn Right", turn_Dir)
-                            sd.putValue(2, turn_Deg)
-                        if pixels_off > 10 and pixels_off < 31:
-                            # sd.putValue("Turn Right", turn_Dir)
-                            sd.putValue(4, turn_Deg)
-                        if pixels_off > 31 and pixels_off < 100:
-                            # sd.putValue("Turn Right", turn_Dir)
-                            sd.putValue(12, turn_Deg)
-                        if pixels_off > 100:
-                            # sd.putValue("Turn Right", turn_Dir)
-                            sd.putValue(20, turn_Deg)
-                        if cntx == cX[0] and cX[1] == cntx:
-                            sd.put("lined_up", turn_Dir)
-                            # sd.put("Move forward", turn_Dir)
-                    if cntx > cX[0] and cx[1] < cntx:
-                        pixels_offcX = cntx - cx[0]
-                        pixels_offcX1 = cntx - cx[1]
-                        if pixels_offcX < 10 and pixels_offcX1 < 10:
-                           # sd.putValue("Turn Right", turn_Dir)
-                            sd.putValue(4, turm_Deg)
-                        if pixels_offcX > 10 and pixels_offcX1 > 10 and pixels_offcX < 100 and pixels_OffcX1 < 100:
-                            #sd.putValue("Turn Right", turn_Dir)
-                            sd.putValue(6, turn_Deg)
-                        if pixel_offcX > 100 and pixel_offcX1 > 100:
-                           # sd.putValue("Turn Right", turn_Dir)
-                            sd.putValue(20, turn_Deg)
-                    if cntx < cX[0] and cX[1] < cntx:
-                        pixels_offcX = cntx - cx[0]
-                        pixels_offcX1 = cntx - cx[1]
-                        if pixels_offcX1 < 10:
-                            #sd.putValue("Turn Left")
-                            sd.putValue(-2, turn_Deg)
-                        if pixels_offcX1 > 10 and pixels_offcX1 < 31:
-                            #sd.putValue("Turn Left", turn_Dir)
-                            sd.putValue(-4, turn_Deg)
-                        if pixels_offcX1 > 100:
-                            #sd.putValue("Turn Left", turn_Dir)
-                            sd.putValue(-20, turn_Deg)    
-                       # More statements?
+        for c in input:
+            M = cv2.moments(c)
+            cX = iny(M["m10"]/ M["m00"])
+            cY = int(M["m01"]/ M["m00"])
+            print(c)
+
+if __name__ == "__main__":
+       ip = GripPipeline()
+       ip.process()
