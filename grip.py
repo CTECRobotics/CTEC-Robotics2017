@@ -94,7 +94,7 @@ class Vision:
 
     @staticmethod
     def line_up(contour):
-        distance = 0 # get distance from distance sensor
+        distance = 0 # get distance from distance sensor will crash at 0
         try:
             cnt_0 = contour[0]
             cnt_1 = contour[1]
