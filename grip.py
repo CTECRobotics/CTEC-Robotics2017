@@ -15,14 +15,13 @@ class Vision:
     def __init__(self):
         """initializes all values to presets or None if need to be set
         """
+        self.__hsv_threshold_hue = [38.09089118939224, 86.13255726266553]
+        self.__hsv_threshold_saturation = [82.55395683453237, 255.0]
+        self.__hsv_threshold_value = [197.21223021582733, 255.0]
 
-        self.__hsl_threshold_hue = [95.50359712230217, 138.53242320819112]
-        self.__hsl_threshold_saturation = [147.29316546762587, 255.0]
-        self.__hsl_threshold_luminance = [36.690647482014384, 255.0]
+        self.hsv_threshold_output = None
 
-        self.hsl_threshold_output = None
-
-        self.__find_contours_input = self.hsl_threshold_output
+        self.__find_contours_input = self.hsv_threshold_output
         self.__find_contours_external_only = False
 
         self.find_contours_output = None
@@ -37,11 +36,11 @@ class Vision:
         Runs the pipeline and sets all outputs to new values.
         """
         # Step HSL_Threshold0:
-        self.__hsl_threshold_input = source0
-        (self.hsl_threshold_output) = self.__hsl_threshold(self.__hsl_threshold_input, self.__hsl_threshold_hue, self.__hsl_threshold_saturation, self.__hsl_threshold_luminance)
+        self.__hsv_threshold_input = source0
+        (self.hsv_threshold_output) = self.__hsv_threshold(self.__hsv_threshold_input, self.__hsv_threshold_hue, self.__hsv_threshold_saturation, self.__hsv_threshold_value)
 
         # Step Find_Contours0:
-        self.__find_contours_input = self.hsl_threshold_output
+        self.__find_contours_input = self.hsv_threshold_output
         (self.find_contours_output) = self.__find_contours(self.__find_contours_input, self.__find_contours_external_only)
 
         """# Step Convex_Hulls0:
@@ -50,18 +49,18 @@ class Vision:
         #step get data0:
         self.line_up(contours)
     @staticmethod
-    def __hsl_threshold(input, hue, sat, lum):
-        """Segment an image based on hue, saturation, and luminance ranges.
+    def __hsv_threshold(input, hue, sat, val):
+        """Segment an image based on hue, saturation, and value ranges.
         Args:
             input: A BGR numpy.ndarray.
             hue: A list of two numbers the are the min and max hue.
             sat: A list of two numbers the are the min and max saturation.
-            lum: A list of two numbers the are the min and max luminance.
+            lum: A list of two numbers the are the min and max value.
         Returns:
             A black and white numpy.ndarray.
         """
-        out = cv2.cvtColor(input, cv2.COLOR_BGR2HLS)
-        return cv2.inRange(out, (hue[0], lum[0], sat[0]),  (hue[1], lum[1], sat[1]))
+        out = cv2.cvtColor(input, cv2.COLOR_BGR2HSV)
+        return cv2.inRange(out, (hue[0], sat[0], val[0]), (hue[1], sat[1], val[1]))
 
     @staticmethod
     def __find_contours(input, external_only):
