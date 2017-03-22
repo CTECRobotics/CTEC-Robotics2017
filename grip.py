@@ -112,6 +112,7 @@ class Vision:
                 sd.putValue('angle_2',angle_1)
         except IndexError as e:
             sd.putValue("IndexError", IndexError)
+            
 if __name__ == "__main__":
        ip = Vision()
        while(True):
