@@ -103,8 +103,8 @@ class Vision:
             cx = int(M['m10']/M['m00'])
             area_0 = cv2.contourArea(cnt_0)
             area_1 = cv2.contourArea(cnt_1)
-            width_0 = area_0/2
-            width_1 = area_1/2
+            width_0 = area_0
+            width_1 = area_1
             angle_const = 68.5/2
             k_0 = math.tan(angle_const) / width_0
             k_1 = math.tan(angle_const) / width_1
