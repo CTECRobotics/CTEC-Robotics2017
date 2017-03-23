@@ -1,4 +1,7 @@
-bool autonomousFlag = true;
+bool autonomousFlag = true;     // Add this after "private:" but before "public:"
+double forwardVelocityAuto = 0.2;   // Add this after "private:" but before "public:"
+
+// Add these anywhere outside of the Robot class
 
 void Robot::AutonomousInit(){
     autonomousFlag = true;
