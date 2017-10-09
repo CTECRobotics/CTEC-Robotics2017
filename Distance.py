@@ -97,10 +97,8 @@ class Vision:
 
     @staticmethod
     def line_up(contour):
-        distance = 0 # get distance from distance sensor, arctan of w or w_1 / a distance of 0 is 0
         try:
             cnt_0 = contour[0]
-            cnt_1 = contour[1]
             M = cv2.moments(cnt_0)
             x,y,w,h = cv2.boundingRect(cnt_0)
             Print(w)
