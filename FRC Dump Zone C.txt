@@ -1,0 +1,8 @@
+Main WPLILIB page
+https://wpilib.screenstepslive.com/s/4485/m/13810
+
+Main Documentation page
+http://first.wpi.edu/FRC/roborio/release/docs/cpp/
+
+Note that we will probably not use any of the methods prescrbied by the WPLILIB page, but we
+look to it for inpsiration and rescourse.
