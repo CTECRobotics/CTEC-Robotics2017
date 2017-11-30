@@ -14,50 +14,76 @@
 #include <AnalogGyro.h>
 #include <cmath>
 #include <ADXRS450_Gyro.h>
+#include "Ultrasonic.h"
+#include "AHRS.h"
 
 class Robot: public frc::IterativeRobot {
+											//REGULATORY VALUES
 	double VALVE_L;
 	double VALVE_R;
-	double VALVE_WAIT;
 	double MASTER_TIME;
+											//CONTROL VALUES
+	double TURRET_SETPOINT;
+	double CAMERA_ERROR;	//POSTIVE IS NEGATIVE, RIGHT IS POSITIVE
+	double GYRO_SETPOINT;
+	double CURRENT_SETPOINT;
+	double DISTANCE;
+	double RANGE_METERS;
+	double OUTPUT;
+											//MODIFIABLE VALUES
+	double THROTTLE;
+	double STEER;
+											//DON'T TOUCH ME VALUES
+	double MAXIMUM_RPM;
+	double VALVE_WAIT;
+											//MISC
 	//double VALVE_GEARBOX_L;
 	//double VALVE_GEARBOX_R;
-	Timer *AUTO_TIMER;
+
+
+
+											//CANTALON OBJECTS
 	CANTalon *MOTOR_LM;
 	CANTalon *MOTOR_LS;
 	CANTalon *MOTOR_RM;
 	CANTalon *MOTOR_RS;
 	CANTalon *MOTOR_SPINNER_ALPHA;
 	CANTalon *MOTOR_SPINNER_BETA;
+											//PID ASSESTS
 	PIDOutput *HORIZONTAL_MOTOR;
-	Encoder *MOTOR_ENCODER_L;
-	Encoder *MOTOR_ENCODER_R;
-	Encoder *SPINNER_RPM;
-	Joystick *LEFT_JOYSTICK;
-	Joystick *RIGHT_JOYSTICK;
-	Solenoid *LAUNCHER_L;
-	Solenoid *LAUNCHER_R;
-	DoubleSolenoid *GEARBOX_MAIN;
+											//PID LOOPS
 	PIDController *MOTOR_L_PID;
 	PIDController *MOTOR_R_PID;
 	PIDController *SPINNER;
 	PIDController *HORIZONTAL_DRIVE;
+											//SOLENOIDS
+	Solenoid *LAUNCHER_L;
+	Solenoid *LAUNCHER_R;
+	DoubleSolenoid *GEARBOX_MAIN;
+											//SENSOR INPUTS
+	Encoder *MOTOR_ENCODER_L;
+	Encoder *MOTOR_ENCODER_R;
+	Encoder *SPINNER_RPM;
 	ADXRS450_Gyro *CONTROL_GYRO;
-	AnalogInput *TURRET_CONTROLLER;
-	double TURRET_POSITION;
-	double CAMERA_ERROR;			//POSTIVE IS NEGATIVE, RIGHT IS POSITIVE
-	double GYRO_SETPOINT;
-	double THROTTLE;
-	double STEER;
-	double MAXIMUM_RPM;
-	//bool CONTROL_STATE_1;
-	//bool CONTROL_STATE_2;
+	Potentiometer *TURRET_CONTROLLER;
+											//MISC
+	Timer *AUTO_TIMER;
+	Joystick *LEFT_JOYSTICK;
+	Joystick *RIGHT_JOYSTICK;
+
+	AnalogInput *AUTO_RANGEFINDER;
 	public:
 	void RobotInit() {
 		VALVE_L = 0;
 		VALVE_R = 1;
 		VALVE_WAIT = 0.25;
 
+		DISTANCE = 0;
+
+		OUTPUT = 0;
+
+		TURRET_SETPOINT = 0;
+		CURRENT_SETPOINT = 0;
 		MASTER_TIME = 0;
 
 		AUTO_TIMER = new Timer();
@@ -68,7 +94,9 @@ class Robot: public frc::IterativeRobot {
 		MOTOR_RS = new CANTalon(4);
 		//MOTOR_SPINNER_ALPHA = new CANTalon(5);
 		//MOTOR_SPINNER_BETA = new CANTalon(6);
-		//HORIZONTAL_MOTOR = new CANTalon(7);
+		HORIZONTAL_MOTOR = new CANTalon(7);
+
+		TURRET_CONTROLLER = new AnalogPotentiometer(1, 3600, 1800);
 
 		MOTOR_LS->SetControlMode(CANSpeedController::kFollower);
 		MOTOR_LS->Set(1);
@@ -78,7 +106,7 @@ class Robot: public frc::IterativeRobot {
 
 		//MOTOR_SPINNER_BETA->SetControlMode(CANSpeedController::kFollower);
 		//MOTOR_SPINNER_BETA->Set(5);
-/*
+
 		MOTOR_ENCODER_L = new Encoder(0, 1, false, Encoder::EncodingType::k4X);
 		MOTOR_ENCODER_L->SetMaxPeriod(.1);
 		MOTOR_ENCODER_L->SetMinRate(10);
@@ -92,7 +120,7 @@ class Robot: public frc::IterativeRobot {
 		MOTOR_ENCODER_R->SetDistancePerPulse(5);
 		MOTOR_ENCODER_R->SetReverseDirection(false);
 		MOTOR_ENCODER_R->SetSamplesToAverage(7);
-*/
+
 		//SPINNER_RPM = new Encoder(4, 5, false, Encoder::EncodingType::k4X);
 		//SPINNER_RPM->SetMaxPeriod(.1);
 		//SPINNER_RPM->SetMinRate(10);
@@ -129,14 +157,24 @@ class Robot: public frc::IterativeRobot {
 		MOTOR_RM->Set(0);
 
 		CONTROL_GYRO->Calibrate();
+
+		AUTO_RANGEFINDER = new AnalogInput(0);
 	}
 private:
+	double VOLTAGE_CONVERT(double INPUT_VOLTAGE) {
+
+		RANGE_METERS = (INPUT_VOLTAGE*5000)/4.88;
+
+		return RANGE_METERS;
+	}
 	void AutonomousInit() override {
 		//MOTOR_ENCODER_L->Reset();
 		//MOTOR_ENCODER_R->Reset();
 
 		//MOTOR_L_PID->Disable();
 		//MOTOR_R_PID->Disable();
+
+		HORIZONTAL_DRIVE->Disable();
 
 		AUTO_TIMER->Reset();
 		AUTO_TIMER->Start();
@@ -173,6 +211,9 @@ private:
 		AUTO_TIMER->Stop();
 		//MOTOR_L_PID->Disable();
 		//MOTOR_R_PID->Disable();
+		HORIZONTAL_DRIVE->Enable();
+		TURRET_SETPOINT = TURRET_CONTROLLER->Get();
+		CURRENT_SETPOINT = TURRET_SETPOINT;
 	}
 
 	void TeleopPeriodic() {
@@ -182,13 +223,22 @@ private:
 		MOTOR_LM->Set(THROTTLE+STEER);
 		MOTOR_RM->Set(-THROTTLE+STEER);
 
-		//if(LEFT_JOYSTICK->GetRawButton(10)) {
+		if(LEFT_JOYSTICK->GetZ() > 0.25) {
+			HORIZONTAL_DRIVE->SetSetpoint(CURRENT_SETPOINT + LEFT_JOYSTICK->GetZ());
+		} else if(LEFT_JOYSTICK->GetZ() < -0.25) {
+			HORIZONTAL_DRIVE->SetSetpoint(CURRENT_SETPOINT - LEFT_JOYSTICK->GetZ());
+		} else {
+			HORIZONTAL_DRIVE->SetSetpoint(CURRENT_SETPOINT);
+		}
 
-		// }
+		OUTPUT = VOLTAGE_CONVERT(AUTO_RANGEFINDER->GetVoltage());
 
-		//SmartDashboard::PutNumber("RPMS_L",  MOTOR_ENCODER_L->GetRate());
-		//SmartDashboard::PutNumber("RPMS_R",  MOTOR_ENCODER_R->GetRate());
+		SmartDashboard::PutNumber("RPMS_L",  MOTOR_ENCODER_L->GetRate());
+		SmartDashboard::PutNumber("RPMS_R",  MOTOR_ENCODER_R->GetRate());
 		SmartDashboard::PutNumber("CURRENT_GRYO", CONTROL_GYRO->GetAngle());
+		//SmartDashboard::PutNumber("CURRENT POSTION", TURRET_CONTROLLER->Get());
+		SmartDashboard::PutNumber("RANGE", AUTO_RANGEFINDER->GetVoltage());
+		SmartDashboard::PutNumber("RANGE_METERS", OUTPUT);
 
 		frc::Wait(0.005);
 	}
