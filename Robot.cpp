@@ -15,13 +15,19 @@
 #include <cmath>
 #include <ADXRS450_Gyro.h>
 #include "Ultrasonic.h"
-#include "AHRS.h"
+//#include "AHRS.h"
+//#include <networktables/NetworkTable.h>
 
 class Robot: public frc::IterativeRobot {
-											//REGULATORY VALUES
+	Accelerometer *INTERNAL_ACCELEROMETER;
+
+
+												//REGULATORY VALUES
 	double VALVE_L;
 	double VALVE_R;
 	double MASTER_TIME;
+	double ARRAY_TMMER;
+	double ARRAY_VALUE;
 											//CONTROL VALUES
 	double TURRET_SETPOINT;
 	double CAMERA_ERROR;	//POSTIVE IS NEGATIVE, RIGHT IS POSITIVE
@@ -36,9 +42,13 @@ class Robot: public frc::IterativeRobot {
 											//DON'T TOUCH ME VALUES
 	double MAXIMUM_RPM;
 	double VALVE_WAIT;
+	int MAXIMUM_ARRAY_VALUE_V;
+	int MAXIMUM_ARRAY_VALUE_H;
+	int AUTONOMOUS_DATA_POSITION [MAXIMUM_ARRAY_VALUE_V][MAXIMUM_ARRAY_VALUE_H];
 											//MISC
 	//double VALVE_GEARBOX_L;
 	//double VALVE_GEARBOX_R;
+
 
 
 
@@ -70,7 +80,8 @@ class Robot: public frc::IterativeRobot {
 	Timer *AUTO_TIMER;
 	Joystick *LEFT_JOYSTICK;
 	Joystick *RIGHT_JOYSTICK;
-
+	NetworkTable *VISION_DATA_ANGLE;
+	NetworkTable *VISION_DATA_RANGE;
 	AnalogInput *AUTO_RANGEFINDER;
 	public:
 	void RobotInit() {
@@ -159,6 +170,9 @@ class Robot: public frc::IterativeRobot {
 		CONTROL_GYRO->Calibrate();
 
 		AUTO_RANGEFINDER = new AnalogInput(0);
+
+		INTERNAL_ACCELEROMETER = new BuiltInAccelerometer();
+
 	}
 private:
 	double VOLTAGE_CONVERT(double INPUT_VOLTAGE) {
@@ -166,6 +180,14 @@ private:
 		RANGE_METERS = (INPUT_VOLTAGE*5000)/4.88;
 
 		return RANGE_METERS;
+	}
+	double VELOCITY_CALCULATE(double ACCEL_X, double ACCEL_Y) {
+		double VELOCITY_X = ACCEL_X*MASTER_TIME;
+		double VELOCITY_Y = ACCEL_Y*MASTER_TIME;
+
+		double TIME_INCREMENT = ceil(MASTER_TIME);
+
+
 	}
 	void AutonomousInit() override {
 		//MOTOR_ENCODER_L->Reset();
@@ -188,6 +210,20 @@ private:
 		//MOTOR_R_PID->SetSetpoint(MAXIMUM_RPM * 0.8);
 	}
 	void AutonomousPeriodic() {
+		if(AUTO_TIMER->Get() >= 0) {
+			if(AUTO_RANGEFINDER->GetValue() >= 1000) {
+				MOTOR_LM->Set(0.25);
+				MOTOR_RM->Set(-0.28);
+			} else if (AUTO_RANGEFINDER->GetValue() < 1000) {
+				MOTOR_LM->Set(0.0);
+				MOTOR_RM->Set(0.0);
+				//do sotmehing
+			} else {
+				MOTOR_LM->Set(0.0);
+				MOTOR_RM->Set(0.0);
+			}
+		}
+		/*
 		if(AUTO_TIMER->Get() >= 14) {
 			MOTOR_LM->Set(0.25);
 			MOTOR_RM->Set(-0.28);
@@ -206,6 +242,7 @@ private:
 			MOTOR_LM->Set(0);
 			MOTOR_RM->Set(0);
 		}
+		*/
 	}
 	void TeleopInit() {
 		AUTO_TIMER->Stop();
@@ -239,7 +276,9 @@ private:
 		//SmartDashboard::PutNumber("CURRENT POSTION", TURRET_CONTROLLER->Get());
 		SmartDashboard::PutNumber("RANGE", AUTO_RANGEFINDER->GetVoltage());
 		SmartDashboard::PutNumber("RANGE_METERS", OUTPUT);
-
+		SmartDashboard::PutNumber("X", INTERNAL_ACCELEROMETER->GetX());
+		SmartDashboard::PutNumber("Y", INTERNAL_ACCELEROMETER->GetY());
+		SmartDashboard::PutNumber("Z", INTERNAL_ACCELEROMETER->GetZ());
 		frc::Wait(0.005);
 	}
 };
